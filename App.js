@@ -4,8 +4,23 @@ import { StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer, StackActions } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 
+//configuration for the firebase - import it
+import {firebaseConfig} from './config/firebase'
+
+//import firebase library
+
+import * as firebase from 'firebase'
+
+
+//initialize app
+if( !firebase.app.length){
+  firebase.initializeApp(firebaseConfig)
+}
+
 import { HomeScreen } from './components/HomeScreen'
 import { DetailScreen } from './components/DetailScreen'
+import { AuthScreen } from './components/AuthScreen' 
+
 
 //array
 const Data = [
@@ -26,10 +41,15 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
+
+        <Stack.Screen name="Register" component={AuthScreen} />
+
         <Stack.Screen name="Home">
           { (props) => <HomeScreen {...props} text="Hello Home Screen" data={listData}/> }
         </Stack.Screen>
+
         <Stack.Screen name="Detail" component={DetailScreen} />
+        
       </Stack.Navigator>
     </NavigationContainer>
   );
