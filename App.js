@@ -42,6 +42,8 @@ export default function App() {
 
   const [auth,setAuth] = useState(false)
 
+  const[dataRef,setDataRef] = useState(null)
+
   //firebase register with email and password
   const register = (intent,email,password) => {
     if(intent == 'register'){
@@ -56,14 +58,31 @@ export default function App() {
     
   }
 
+  //------firebase add data
+  const addData = (item) => {
+    //make sure user is logged in first
+    //check the auth value
+    if(!dataRef){
+      return;
+    }
+    const dataObj = {  
+      amount:item.amount,
+      note: item.note,
+      category:item.category
+    }
+    firebase.database().ref(`${dataRef}/items/${item.id}`).set(dataObj)
+  }
+
   firebase.auth().onAuthStateChanged( (user) => {
     if( user ){
       setAuth(true)
       console.log('user logged in')
+      setDataRef(`users/${user.uid}`)
     }
     else{
       setAuth(false)
       console.log('user not logged in')
+      setDataRef(null)
     }
   } )
 
@@ -91,7 +110,11 @@ export default function App() {
             )
           }) }
         >
-          { (props) => <HomeScreen {...props} text="Hello Home Screen" data={listData}/> }
+          { (props) => <HomeScreen {...props} 
+          text="Hello Home Screen" 
+          data={listData}
+          add={addData}
+          /> }
         </Stack.Screen>
 
         <Stack.Screen name="Detail" component={DetailScreen} />
