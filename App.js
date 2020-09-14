@@ -80,13 +80,13 @@ export default function App() {
           options = {({navigation,route}) => ({
             headerTitle: "Expenses",
             headerRight: () => (
-              <TouchableOpacity onPress={() => {
+              <TouchableOpacity style={styles.signout} onPress={() => {
                 firebase.auth().signOut().then( () => {
                   setAuth(false)
                   navigation.reset({index:0,routes:[{name:"Register"}]})
                 })
               }}> 
-                <Text>Sign out</Text>
+                <Text style={styles.signOutText}>Sign Out</Text>
               </TouchableOpacity>
             )
           }) }
@@ -110,4 +110,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  signout:{
+    backgroundColor:'darkgreen',
+    padding:5,
+    marginRight:10,
+    borderRadius:5,
+
+  },
+  signOutText:{
+    color:'white'
+  }
 });

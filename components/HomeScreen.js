@@ -1,10 +1,24 @@
-import React from 'react' 
+import React , {useState} from 'react' 
 import { StyleSheet, Text, View, TouchableOpacity, Button, FlatList} from 'react-native'
 import {useNavigation} from '@react-navigation/native'
+import { TextInput } from 'react-native-gesture-handler'
 
+import {Select} from './Select'
 
 
 export const HomeScreen = (props) => {
+
+    const selectItems = [
+        {label: "Food", value: "food"},
+        {label: "Transport", value: "transport"},
+        {label: "Groceries", value: "groceries"},
+        {label: "Bills", value: "bills"},
+
+    ]
+
+    const [category,setCategory] = useState(null)
+    const [amount,setAmount] = useState(0)
+    const [note,setNote] = useState(null)
 
     const navigation = useNavigation()
     const renderList = ({item}) => (
@@ -23,11 +37,26 @@ export const HomeScreen = (props) => {
 
 
     return(
-        <View style={homeStyle.background}>
-            <Text>{props.text}</Text>
-            {/* <Button title="Go to Detail"  onPress={() => {navigation.navigate("Detail")}} /> */}
-            {/* command+/ */}
+        <View style={homeStyle.container}>
+            <View >
+                <TextInput 
+                style={homeStyle.input} 
+                placeholder="amount"
+                onChangeText = { (amount) => setAmount(amount)}
+                />
 
+            <Select items={selectItems}/>
+                
+            <TextInput 
+            style={homeStyle.input} 
+            placeholder="notes"
+            onChangeText={(note) => setNote(note)}
+            />
+
+            <TouchableOpacity>
+                <Text>Add</Text>
+            </TouchableOpacity>
+            </View>
             <FlatList
                 data = {props.data}
                 renderItem = {renderList} 
@@ -49,14 +78,26 @@ const ListItem = (props) => {
 }
 
 const homeStyle = StyleSheet.create({
-    item:{
+    container:{
+        flex:1,
         paddingHorizontal:10,
+    },
+    item:{
+        paddingHorizontal:15,
         paddingVertical:20,
         borderBottomWidth:1,
-        borderBottomColor:'grey',
+        borderBottomColor:'#cccccc',
         flexDirection:'row',
         justifyContent:'space-between'
 
+    },
+    input:{
+        padding:10,
+        borderColor:'#777777',
+        borderWidth:1,
+        borderRadius:10,
+        backgroundColor:'#ffffff',
+        marginVertical:15,
     },
     background:{
         backgroundColor:'pink'
