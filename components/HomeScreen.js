@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useState, useEffect} from 'react'
 import { StyleSheet, Text, View, TouchableOpacity, Button, FlatList } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { TextInput } from 'react-native-gesture-handler'
@@ -13,6 +13,7 @@ export const HomeScreen = (props) => {
     {label: "Groceries", value: "groceries"},
     {label: "Bills", value: "bills"},
   ]
+
 
   const [category,setCategory] = useState(null)
   const [amount,setAmount] = useState(0)
@@ -63,9 +64,10 @@ export const HomeScreen = (props) => {
     <View style={homeStyle.container}>
       <View>
         <TextInput 
-        style={homeStyle.input} 
-        placeholder="amount" 
-        onChangeText={ (amount) => validateAmount(amount) }
+          style={homeStyle.input} 
+          placeholder="amount" 
+          onChangeText={ (amount) => validateAmount(amount) }
+          keyboardType='decimal-pad'
         />
         <Select items={selectItems} onSelect={setCategory} />
         <TextInput 
@@ -82,9 +84,10 @@ export const HomeScreen = (props) => {
         </TouchableOpacity>
       </View>
       <FlatList
-      data = {props.data}
-      renderItem = {renderList} 
-      keyExtractor = { item => item.id }
+        data = {props.data}
+        renderItem = {renderList} 
+        keyExtractor = { item => item.id }
+        extraData = {props.extra}
       />
     </View>
   )

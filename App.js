@@ -1,87 +1,125 @@
 import { StatusBar } from 'expo-status-bar';
-import React, {useState} from 'react';
+import React, {useState,useEffect} from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { NavigationContainer, StackActions } from '@react-navigation/native'
 import { createStackNavigator } from '@react-navigation/stack'
 
-//configuration for the firebase - import it
+// firebase config
 import {firebaseConfig} from './config/firebase'
-
-//import firebase library
-
+// firebase library
 import * as firebase from 'firebase'
-
-
-//initialize app
-if( !firebase.apps.length){
-  firebase.initializeApp(firebaseConfig)
+// initialise app
+if ( !firebase.apps.length ){
+  firebase.initializeApp( firebaseConfig )
 }
 
 import { HomeScreen } from './components/HomeScreen'
 import { DetailScreen } from './components/DetailScreen'
-import { AuthScreen } from './components/AuthScreen' 
+import { AuthScreen } from './components/AuthScreen'
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
-
-//array
-const Data = [
-  {  "amount": 50,  "category": "food",  "id": "1598241633",  "note": "buying lunch"},
-  {  "amount": 20,  "category": "transport",  "id": "1598241768",  "note": "catching train"},
-  {  "amount": 80,  "category": "groceries",  "id": "1598241782",  "note": "shopping at Coles"},
-  {  "amount": 13,  "category": "food",  "id": "1598241795",  "note": "snack time"},
-  {  "amount": 35,  "category": "entertainment",  "id": "1598241806",  "note": "buying Untitled Goose"},
-  {  "amount": 350,  "category": "rent",  "id": "1598241817",  "note": "weeks rent"},
-  {  "amount": 60,  "category": "transport",  "id": "1598241827",  "note": "topping up Opal card"},
-  {  "amount": 30,  "category": "food",  "id": "1598241841",  "note": "buying dinner"}
-  ]
-
-//array_end
-
 export default function App() {
-  const listData = Data
 
   const [auth,setAuth] = useState(false)
+  const [dataRef,setDataRef] = useState(null)
+  // const [listData, setListData] = useState([])
+  const [updating,setUpdating] = useState(false)
 
-  const[dataRef,setDataRef] = useState(null)
+  useEffect(() => {
+    readData()
+  })
+  
+  let listData = []
 
-  //firebase register with email and password
-  const register = (intent,email,password) => {
-    if(intent == 'register'){
-      //authentication
-      firebase.auth().createUserWithEmailAndPassword(email,password)
-      .catch(error => console.log(error))
+  const register = (intent, email,password) => {
+    if( intent == 'register'){
+      firebase.auth().createUserWithEmailAndPassword( email, password )
+      .catch( error => console.log(error) )
     }
-    else if(intent == 'login'){
-      firebase.auth().signInWithEmailAndPassword(email,password)
-      .catch(error => console.log(error))
+    else if( intent == 'login' ) {
+      firebase.auth().signInWithEmailAndPassword( email, password )
+      .catch( error => console.log(error) )
     }
+  }
+
+  const addData = (item) => {
+    if( !dataRef ) {
+      return;
+    }
+    setUpdating(false)
+    const dataObj = { 
+      amount: item.amount,
+      note: item.note,
+      category: item.category
+    }
+    firebase.database().ref(`${dataRef}/items/${item.id}`).set(dataObj, () => {
+      // update state for rendering of list
+      setUpdating(true)
+    })
+  }
+
+  const readData = () => {
+    if(!dataRef) {
+      return
+    }
+    firebase.database().ref(`${dataRef}/items`).once('value')
+    .then((snapshot) => {
+      let data = snapshot.val()
+      if(data) {
+        let keys = Object.keys(data)
+        listData = []
+        keys.forEach((key) => {
+          let item = data[key]
+          item.id = key
+          listData.push(item)
+        })
+        setUpdating(true)
+      }
+    })
+    
     
   }
 
-  //------firebase add data
-  const addData = (item) => {
-    //make sure user is logged in first
-    //check the auth value
-    if(!dataRef){
-      return;
-    }
-    const dataObj = {  
-      amount:item.amount,
-      note: item.note,
-      category:item.category
-    }
-    firebase.database().ref(`${dataRef}/items/${item.id}`).set(dataObj)
+  const updateData = (item) => {
+    setUpdating(false)
+    const data = {amount: item.amount,note: item.note, category: item.category }
+    firebase.database().ref(`${dataRef}/items/${item.id}`).update( data )
+    .then(() => {
+      // data is updated
+      setUpdating(true)
+    })
   }
 
+  const deleteData = (id) => {
+    setUpdating(false)
+    firebase.database().ref(`${dataRef}/items/${id}`).remove()
+    .then( () => {
+      setUpdating(true)
+    })
+  }
+
+  // listen for data changes
+  const db = firebase.database().ref(`${dataRef}/items`)
+  db.on('value', (snapshot) => {
+    const dataObj = snapshot.val()
+    if(dataObj) {
+      let keys = Object.keys(dataObj)
+      listData = []
+      keys.forEach( (key) => {
+        let item = dataObj[key]
+        item.id = key
+        listData.push(item)
+      })
+    }
+  })
+
   firebase.auth().onAuthStateChanged( (user) => {
-    if( user ){
+    if( user ) {
       setAuth(true)
-      console.log('user logged in')
       setDataRef(`users/${user.uid}`)
     }
-    else{
+    else {
       setAuth(false)
-      console.log('user not logged in')
       setDataRef(null)
     }
   } )
@@ -89,36 +127,35 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-
         <Stack.Screen name="Register">
-          {(props) => <AuthScreen {...props} signup = {register} loggedIn={auth}  />}
+          { (props) => <AuthScreen {...props} signup={ register } loggedIn={auth} /> }
         </Stack.Screen>
-
         <Stack.Screen 
           name="Home"
-          options = {({navigation,route}) => ({
+          options={({navigation,route}) => ({
             headerTitle: "Expenses",
             headerRight: () => (
-              <TouchableOpacity style={styles.signout} onPress={() => {
+              <TouchableOpacity style={styles.signout} onPress={ () => {
                 firebase.auth().signOut().then( () => {
                   setAuth(false)
-                  navigation.reset({index:0,routes:[{name:"Register"}]})
+                  navigation.reset({ index: 0, routes: [{name: "Register"}] })
                 })
-              }}> 
-                <Text style={styles.signOutText}>Sign Out</Text>
+              }}>
+                <Text style={styles.signOutText}>Sign out</Text>
               </TouchableOpacity>
             )
-          }) }
+          })}
         >
           { (props) => <HomeScreen {...props} 
           text="Hello Home Screen" 
           data={listData}
           add={addData}
-          /> }
+          extra={updating}
+           /> }
         </Stack.Screen>
-
-        <Stack.Screen name="Detail" component={DetailScreen} />
-        
+        <Stack.Screen name="Detail">
+          { (props) => <DetailScreen {...props} update={updateData} delete={deleteData} /> }
+        </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -133,14 +170,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  signout:{
-    backgroundColor:'darkgreen',
-    padding:5,
-    marginRight:10,
-    borderRadius:5,
-
+  signout: {
+    backgroundColor: '#444444',
+    padding: 5,
+    marginRight: 10,
+    borderRadius: 5,
   },
-  signOutText:{
-    color:'white'
-  }
+  signOutText: {
+    color: '#eeeeee'
+  },
 });
